@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X, CreditCard, Wallet } from "lucide-react";
+import { X, CreditCard, Wallet, Smartphone } from "lucide-react";
 import { Booking } from "@/lib/types";
 import { PayPalPayment } from "@/lib/payments/paypal";
 import { StripePaymentButton } from "@/lib/payments/stripe";
+import { VenmoPayment } from "@/lib/payments/venmo";
 
 interface PaymentModalProps {
   booking: Booking;
@@ -14,7 +15,7 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: PaymentModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState<"paypal" | "stripe" | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<"paypal" | "stripe" | "venmo" | null>(null);
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
@@ -85,13 +86,24 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
               <h3 className="font-semibold text-primary-800 mb-4">Choose Payment Method</h3>
               
               <button
+                onClick={() => setSelectedMethod("venmo")}
+                className="w-full p-4 border-2 border-primary-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all flex items-center gap-3"
+              >
+                <Smartphone className="h-6 w-6 text-[#3D95CE]" />
+                <div className="flex-1 text-left">
+                  <div className="font-semibold text-primary-800">Venmo</div>
+                  <div className="text-sm text-earth-600">Pay directly with Venmo</div>
+                </div>
+              </button>
+
+              <button
                 onClick={() => setSelectedMethod("paypal")}
                 className="w-full p-4 border-2 border-primary-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all flex items-center gap-3"
               >
                 <Wallet className="h-6 w-6 text-primary-700" />
                 <div className="flex-1 text-left">
-                  <div className="font-semibold text-primary-800">PayPal or Venmo</div>
-                  <div className="text-sm text-earth-600">Pay with PayPal account or Venmo</div>
+                  <div className="font-semibold text-primary-800">PayPal</div>
+                  <div className="text-sm text-earth-600">Pay with PayPal account</div>
                 </div>
               </button>
 
@@ -118,9 +130,22 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
                 ← Back to payment methods
               </button>
 
+              {selectedMethod === "venmo" && (
+                <div>
+                  <h3 className="font-semibold text-primary-800 mb-4">Pay with Venmo</h3>
+                  <VenmoPayment
+                    booking={booking}
+                    onSuccess={() => {
+                      onPaymentSuccess();
+                      onClose();
+                    }}
+                  />
+                </div>
+              )}
+
               {selectedMethod === "paypal" && (
                 <div>
-                  <h3 className="font-semibold text-primary-800 mb-4">Pay with PayPal or Venmo</h3>
+                  <h3 className="font-semibold text-primary-800 mb-4">Pay with PayPal</h3>
                   <PayPalPayment
                     booking={booking}
                     onSuccess={handlePaymentSuccess}
