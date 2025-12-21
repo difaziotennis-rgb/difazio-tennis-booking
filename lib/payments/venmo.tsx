@@ -106,7 +106,7 @@ export function VenmoPayment({ booking, onSuccess }: VenmoPaymentProps) {
       </div>
 
       <button
-        onClick={onSuccess}
+        onClick={() => onSuccess()}
         className="w-full border-2 border-primary-300 text-primary-700 font-medium py-3 px-4 rounded-lg hover:bg-primary-50 transition-colors"
       >
         I've completed the Venmo payment

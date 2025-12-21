@@ -20,11 +20,11 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
 
   if (!isOpen) return null;
 
-  const handlePaymentSuccess = async (paymentId: string) => {
+  const handlePaymentSuccess = async (paymentId?: string) => {
     try {
       // Update booking with payment info
       // In production, this would call your API
-      console.log("Payment successful:", paymentId);
+      console.log("Payment successful:", paymentId || "manual confirmation");
       onPaymentSuccess();
       onClose();
     } catch (err: any) {
