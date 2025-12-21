@@ -65,11 +65,10 @@ export function VenmoPayment({ booking, onSuccess }: VenmoPaymentProps) {
   }
 
   const handleVenmoClick = () => {
-    // Open Venmo in new tab
-    window.open(venmoUrl, "_blank");
-    
-    // Show instructions
-    // After user pays, they can mark as paid manually or we can add webhook later
+    // Try to open Venmo app first (mobile), then fallback to web
+    // On mobile, this will open the Venmo app if installed
+    // On desktop, this opens Venmo website
+    window.open(venmoUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -98,6 +97,12 @@ export function VenmoPayment({ booking, onSuccess }: VenmoPaymentProps) {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
         <p className="font-semibold mb-1">After paying:</p>
         <p>Your booking will be confirmed once payment is received. You'll receive a confirmation email.</p>
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-600">
+        <p className="font-semibold mb-1">Having trouble?</p>
+        <p>Open Venmo app and search for: <strong>{cleanHandle}</strong></p>
+        <p className="mt-1">Send ${amount} with note: "{note}"</p>
       </div>
 
       <button
