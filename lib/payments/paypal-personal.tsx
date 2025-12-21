@@ -12,30 +12,24 @@ interface PayPalPersonalPaymentProps {
 /**
  * PayPal payment for personal/non-business accounts
  * Uses PayPal.me links or email-based payment links
+ * 
+ * NOTE: This component does NOT require NEXT_PUBLIC_PAYPAL_CLIENT_ID
+ * It uses hardcoded PayPal.me username from payment-config.ts
  */
 export function PayPalPersonalPayment({ booking, onSuccess }: PayPalPersonalPaymentProps) {
+  // Get PayPal configuration
+  const paypalMeUsername = PAYMENT_CONFIG.paypalMeUsername?.trim() || "";
+  const paypalEmail = PAYMENT_CONFIG.paypalEmail?.trim() || "";
+  
   // Verify PayPal is configured
-  // Check both PayPal.me username and email
-  const hasPayPalMe = PAYMENT_CONFIG.paypalMeUsername && PAYMENT_CONFIG.paypalMeUsername.trim() !== "";
-  const hasPayPalEmail = PAYMENT_CONFIG.paypalEmail && PAYMENT_CONFIG.paypalEmail.trim() !== "";
-  
-  // Debug logging
-  if (typeof window !== "undefined") {
-    console.log("PayPal Config Check:", {
-      paypalMeUsername: PAYMENT_CONFIG.paypalMeUsername,
-      paypalEmail: PAYMENT_CONFIG.paypalEmail,
-      hasPayPalMe,
-      hasPayPalEmail,
-    });
-  }
-  
-  if (!hasPayPalMe && !hasPayPalEmail) {
+  if (!paypalMeUsername && !paypalEmail) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-        <p className="font-semibold mb-2">PayPal Configuration Issue</p>
-        <p>PayPal.me username: {PAYMENT_CONFIG.paypalMeUsername || "Not set"}</p>
-        <p>PayPal email: {PAYMENT_CONFIG.paypalEmail || "Not set"}</p>
-        <p className="mt-2">Please check the payment configuration file.</p>
+        <p className="font-semibold mb-2">⚠️ PayPal Configuration Missing</p>
+        <p className="mb-2">This component uses PayPal.me links and does NOT require API keys.</p>
+        <p className="mb-1">PayPal.me username: <strong>{paypalMeUsername || "Not set"}</strong></p>
+        <p>PayPal email: <strong>{paypalEmail || "Not set"}</strong></p>
+        <p className="mt-2 text-xs">Please check lib/payment-config.ts</p>
       </div>
     );
   }
