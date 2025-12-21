@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 /**
  * Check court availability using Browserless.io
  * This uses browser automation to interact with the Wix booking widget
+ * Updated: Ready for production use
  */
 export async function GET(request: Request) {
   try {
