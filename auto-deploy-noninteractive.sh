@@ -110,3 +110,4 @@ echo "   1. Add domain: difaziotennis.com"
 echo "   2. Add environment variables"
 echo "   3. Redeploy"
 
+

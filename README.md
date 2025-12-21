@@ -75,3 +75,4 @@ The app is structured to easily add payment integration. See `lib/payment-integr
 - Lucide React for icons
 
 
+

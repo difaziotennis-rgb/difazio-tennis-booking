@@ -27,6 +27,51 @@ export function Calendar({ onDateSelect, onTimeSlotSelect, selectedDate }: Calen
     }
   }, []);
 
+  // Sync court availability when a date is selected
+  useEffect(() => {
+    if (selectedDateState) {
+      const dateStr = format(selectedDateState, 'yyyy-MM-dd');
+      // Check external availability for this date
+      const checkAvailability = async () => {
+        try {
+          const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+          for (const hour of hours) {
+            const slotId = `${dateStr}-${hour}`;
+            const slot = timeSlots.get(slotId);
+            
+            // Only check if slot exists and isn't booked
+            if (slot && !slot.booked) {
+              try {
+                const response = await fetch(
+                  `/api/check-court-availability?date=${dateStr}&hour=${hour}`
+                );
+                if (response.ok) {
+                  const data = await response.json();
+                  // Update slot availability based on external check
+                  if (slot.available !== data.available) {
+                    slot.available = data.available;
+                    timeSlots.set(slotId, slot);
+                    if (typeof window !== "undefined") {
+                      sessionStorage.setItem(`slot_${slotId}`, JSON.stringify(slot));
+                    }
+                    // Force re-render
+                    setRefreshKey(prev => prev + 1);
+                  }
+                }
+              } catch (error) {
+                console.error(`Error checking availability for ${dateStr} ${hour}:00:`, error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error syncing availability:", error);
+        }
+      };
+      
+      checkAvailability();
+    }
+  }, [selectedDateState]);
+
   // Sync selectedDate prop with internal state
   useEffect(() => {
     if (selectedDate) {

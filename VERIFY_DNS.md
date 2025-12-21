@@ -72,3 +72,4 @@ Let me know:
 2. What do you see in your Wix DNS settings?
 3. What does Vercel show for the domain status?
 
+
