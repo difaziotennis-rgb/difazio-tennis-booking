@@ -17,8 +17,9 @@ interface PayPalPersonalPaymentProps {
  * It uses hardcoded PayPal.me username from payment-config.ts
  */
 export function PayPalPersonalPayment({ booking, onSuccess }: PayPalPersonalPaymentProps) {
-  // VERSION: 2.0 - This component does NOT require NEXT_PUBLIC_PAYPAL_CLIENT_ID
+  // VERSION: 2.1 - FORCE CACHE INVALIDATION - This component does NOT require NEXT_PUBLIC_PAYPAL_CLIENT_ID
   // If you see an error about NEXT_PUBLIC_PAYPAL_CLIENT_ID, you're using OLD cached code!
+  // This component uses PayPal.me links - NO API KEYS NEEDED!
   
   // Get PayPal configuration
   const paypalMeUsername = PAYMENT_CONFIG.paypalMeUsername?.trim() || "";
