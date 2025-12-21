@@ -275,3 +275,4 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
   );
 }
 
+// Force rebuild Sat Dec 20 23:14:58 EST 2025
