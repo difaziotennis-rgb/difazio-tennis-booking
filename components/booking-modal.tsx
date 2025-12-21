@@ -101,6 +101,31 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
       sessionStorage.setItem(`slot_${slot.id}`, JSON.stringify(updatedSlot));
       console.log("✅ Time slot updated:", slot.id, updatedSlot);
 
+      // Send email notification
+      try {
+        // Get notification email from settings
+        const saved = localStorage.getItem("paymentSettings");
+        const notificationEmail = saved 
+          ? JSON.parse(saved).notificationEmail || "difaziotennis@gmail.com"
+          : "difaziotennis@gmail.com";
+
+        // Send email notification
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            booking: tempBooking,
+            notificationEmail,
+          }),
+        });
+        console.log("✅ Email notification sent to:", notificationEmail);
+      } catch (emailError) {
+        console.error("⚠️ Failed to send email notification:", emailError);
+        // Don't block the booking flow if email fails
+      }
+
       // Reset form and close modals
       setFormData({ name: "", email: "", phone: "" });
       setShowPayment(false);

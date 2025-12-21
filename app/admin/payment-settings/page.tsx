@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, CreditCard, Wallet, Building2 } from "lucide-react";
+import { ArrowLeft, Save, CreditCard, Wallet, Building2, Mail } from "lucide-react";
 import { initializeMockData } from "@/lib/mock-data";
 
 interface PaymentSettings {
@@ -12,6 +12,7 @@ interface PaymentSettings {
   bankAccountNumber: string;
   bankRoutingNumber: string;
   bankName: string;
+  notificationEmail: string;
   notes: string;
 }
 
@@ -27,6 +28,7 @@ export default function PaymentSettingsPage() {
     bankAccountNumber: "",
     bankRoutingNumber: "",
     bankName: "",
+    notificationEmail: "difaziotennis@gmail.com",
     notes: "",
   });
 
@@ -169,6 +171,35 @@ export default function PaymentSettingsPage() {
             </div>
           </div>
 
+          {/* Notification Email Section */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-primary-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Mail className="h-6 w-6 text-blue-700" />
+              </div>
+              <div>
+                <h2 className="text-xl font-serif text-primary-800">Email Notifications</h2>
+                <p className="text-sm text-earth-600">Email address to receive booking notifications</p>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="notificationEmail" className="block text-sm font-medium text-primary-800 mb-2">
+                Notification Email
+              </label>
+              <input
+                type="email"
+                id="notificationEmail"
+                value={formData.notificationEmail}
+                onChange={(e) => handleChange("notificationEmail", e.target.value)}
+                placeholder="difaziotennis@gmail.com"
+                className="w-full px-4 py-2 border border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+              <p className="mt-1 text-xs text-earth-500">
+                You'll receive an email whenever someone books a lesson
+              </p>
+            </div>
+          </div>
+
           {/* Bank Account Section */}
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-primary-100 p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -305,5 +336,6 @@ export default function PaymentSettingsPage() {
     </div>
   );
 }
+
 
 
