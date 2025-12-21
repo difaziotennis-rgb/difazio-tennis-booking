@@ -270,7 +270,7 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
             setShowPayment(false);
             setTempBooking(null);
           }}
-          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentSuccess={(isStripe?: boolean) => handlePaymentSuccess(isStripe)}
         />
       )}
     </div>

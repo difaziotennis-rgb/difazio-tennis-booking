@@ -159,14 +159,9 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
                   <StripePaymentButton
                     booking={booking}
                     onSuccess={() => {
-                      // Pass a flag to indicate this is a Stripe payment
-                      // This prevents immediate redirect (Stripe will redirect)
-                      if (typeof (onPaymentSuccess as any) === 'function') {
-                        // Check if handlePaymentSuccess accepts a parameter
-                        (onPaymentSuccess as (isStripe?: boolean) => void)(true);
-                      } else {
-                        onPaymentSuccess();
-                      }
+                      // For Stripe, call onPaymentSuccess to create booking
+                      // Stripe will handle the redirect after payment
+                      onPaymentSuccess();
                     }}
                     onError={handlePaymentError}
                   />
