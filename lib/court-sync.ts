@@ -35,19 +35,21 @@ export async function syncDateAvailability(date: string): Promise<void> {
     const slotId = `${date}-${hour}`;
     const slot = timeSlots.get(slotId);
 
-    if (slot && !slot.booked) {
-      // Only check if not already booked
+    // Only check if slot is marked as available on YOUR site and isn't booked
+    // This way we only verify availability for times you've already set as available
+    if (slot && slot.available && !slot.booked) {
       const isAvailable = await syncCourtAvailability(date, hour);
       
-      // Update slot availability based on external check
-      if (slot.available !== isAvailable) {
-        slot.available = isAvailable;
+      // If external site says it's NOT available, mark it as unavailable on your site
+      if (isAvailable === false) {
+        slot.available = false;
         timeSlots.set(slotId, slot);
         
         // Also update in sessionStorage
         if (typeof window !== "undefined") {
           sessionStorage.setItem(`slot_${slotId}`, JSON.stringify(slot));
         }
+        console.log(`⚠️ Time slot ${date} ${hour}:00 marked unavailable (not available on rhinebecktennis.com)`);
       }
     }
   }

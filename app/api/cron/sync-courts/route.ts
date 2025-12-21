@@ -18,9 +18,11 @@ export async function GET(request: Request) {
     const endDate = addDays(today, 30);
     const results: Array<{ date: string; hour: number; available: boolean }> = [];
 
-    // Import timeSlots to check which slots are marked as available
-    // Note: In a real implementation, this would come from your database
-    // For now, we'll check via the API which respects your site's availability settings
+    // Note: The check-court-availability endpoint will only check external availability
+    // for slots that are already marked as available on your site.
+    // This is handled in the calendar component and API route logic.
+    // The cron job will check all slots, but the API will skip external checks
+    // for slots that aren't available on your site.
     
     // Check each day
     for (let i = 0; i < 30; i++) {
@@ -28,16 +30,12 @@ export async function GET(request: Request) {
       const dateStr = format(checkDate, "yyyy-MM-dd");
 
       // Check each hour (9 AM - 7 PM)
+      // The API will only actually check rhinebecktennis.com for slots
+      // that are marked as available on your site
       for (let hour = 9; hour <= 19; hour++) {
         try {
-          // First, check if this time is marked as available on YOUR site
-          // Only check rhinebecktennis.com if it's available on your site
-          const slotId = `${dateStr}-${hour}`;
-          
-          // Check your site's availability first
-          // We'll pass a flag to only check external if it's available locally
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/check-court-availability?date=${dateStr}&hour=${hour}&onlyIfAvailable=true`,
+            `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/check-court-availability?date=${dateStr}&hour=${hour}`,
             {
               headers: {
                 "User-Agent": "DiFazioTennis-Cron/1.0",
@@ -47,8 +45,8 @@ export async function GET(request: Request) {
 
           if (response.ok) {
             const data = await response.json();
-            // Only record if it was actually checked (not skipped)
-            if (data.checked !== false) {
+            // Only record if it was actually checked (not skipped because not available on your site)
+            if (data.checked !== false && data.skipped !== true) {
               results.push({
                 date: dateStr,
                 hour,
