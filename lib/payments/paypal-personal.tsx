@@ -19,10 +19,23 @@ export function PayPalPersonalPayment({ booking, onSuccess }: PayPalPersonalPaym
   const hasPayPalMe = PAYMENT_CONFIG.paypalMeUsername && PAYMENT_CONFIG.paypalMeUsername.trim() !== "";
   const hasPayPalEmail = PAYMENT_CONFIG.paypalEmail && PAYMENT_CONFIG.paypalEmail.trim() !== "";
   
+  // Debug logging
+  if (typeof window !== "undefined") {
+    console.log("PayPal Config Check:", {
+      paypalMeUsername: PAYMENT_CONFIG.paypalMeUsername,
+      paypalEmail: PAYMENT_CONFIG.paypalEmail,
+      hasPayPalMe,
+      hasPayPalEmail,
+    });
+  }
+  
   if (!hasPayPalMe && !hasPayPalEmail) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-        PayPal is not configured. Please add your PayPal.me username or email to the payment config.
+        <p className="font-semibold mb-2">PayPal Configuration Issue</p>
+        <p>PayPal.me username: {PAYMENT_CONFIG.paypalMeUsername || "Not set"}</p>
+        <p>PayPal email: {PAYMENT_CONFIG.paypalEmail || "Not set"}</p>
+        <p className="mt-2">Please check the payment configuration file.</p>
       </div>
     );
   }
