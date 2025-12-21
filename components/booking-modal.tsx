@@ -6,6 +6,7 @@ import { TimeSlot, Booking } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import { format } from "date-fns";
 import { timeSlots, bookings } from "@/lib/mock-data";
+import { PaymentModal } from "@/components/payment-modal";
 
 interface BookingModalProps {
   slot: TimeSlot;
@@ -22,6 +23,8 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
+  const [tempBooking, setTempBooking] = useState<Booking | null>(null);
 
   if (!isOpen) return null;
 
@@ -29,14 +32,16 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
     e.preventDefault();
     setError("");
 
-    // No validation required - all fields are optional
+    // Basic validation - at least name or email required
+    if (!formData.name.trim() && !formData.email.trim()) {
+      setError("Please provide at least your name or email address.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Create booking (all fields optional)
+      // Create temporary booking (not saved yet - will be saved after payment)
       const bookingId = `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const clientName = formData.name.trim() || "Guest";
       const clientEmail = formData.email.trim() || "";
@@ -50,26 +55,45 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
         clientName,
         clientEmail,
         clientPhone,
-        status: "confirmed",
+        status: "pending", // Pending until payment
         createdAt: new Date().toISOString(),
         paymentStatus: "pending",
         amount: 160,
       };
 
+      // Store temporarily - will be saved after payment
+      setTempBooking(booking);
+      setIsSubmitting(false);
+      setShowPayment(true);
+    } catch (err) {
+      console.error("❌ Booking error:", err);
+      setError("Failed to process booking. Please try again.");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    if (!tempBooking) return;
+
+    try {
+      // Payment successful - now create the booking and mark slot as booked
+      tempBooking.status = "confirmed";
+      tempBooking.paymentStatus = "paid";
+
       // Save booking to Map
-      bookings.set(bookingId, booking);
+      bookings.set(tempBooking.id, tempBooking);
       
-      // Also save to sessionStorage for persistence across page navigation
-      sessionStorage.setItem(`booking_${bookingId}`, JSON.stringify(booking));
-      console.log("✅ Booking created:", bookingId, booking);
+      // Also save to sessionStorage
+      sessionStorage.setItem(`booking_${tempBooking.id}`, JSON.stringify(tempBooking));
+      console.log("✅ Booking created after payment:", tempBooking.id, tempBooking);
 
       // Update time slot - mark as booked
       const updatedSlot: TimeSlot = {
         ...slot,
         booked: true,
-        bookedBy: clientName,
-        bookedEmail: clientEmail,
-        bookedPhone: clientPhone,
+        bookedBy: tempBooking.clientName,
+        bookedEmail: tempBooking.clientEmail,
+        bookedPhone: tempBooking.clientPhone,
       };
       timeSlots.set(slot.id, updatedSlot);
       
@@ -77,15 +101,16 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
       sessionStorage.setItem(`slot_${slot.id}`, JSON.stringify(updatedSlot));
       console.log("✅ Time slot updated:", slot.id, updatedSlot);
 
-      // Reset form
+      // Reset form and close modals
       setFormData({ name: "", email: "", phone: "" });
+      setShowPayment(false);
+      setTempBooking(null);
       
       // Redirect to success page
-      window.location.href = `/booking-success?id=${bookingId}`;
+      window.location.href = `/booking-success?id=${tempBooking.id}&payment=success`;
     } catch (err) {
-      console.error("❌ Booking error:", err);
-      setError("Failed to create booking. Please try again.");
-      setIsSubmitting(false);
+      console.error("❌ Error finalizing booking:", err);
+      setError("Payment successful but failed to confirm booking. Please contact support.");
     }
   };
 
@@ -184,9 +209,9 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-semibold mb-1">Payment Information</p>
-              <p>Payment will be processed after booking confirmation. You'll receive payment instructions via email.</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+              <p className="font-semibold mb-1">⚠️ Payment Required</p>
+              <p>Your time slot will be reserved only after payment is completed. The slot remains available until payment is confirmed.</p>
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -203,12 +228,25 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Booking..." : "Confirm Booking"}
+                {isSubmitting ? "Processing..." : "Continue to Payment"}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* Payment Modal - shown after form submission */}
+      {showPayment && tempBooking && (
+        <PaymentModal
+          booking={tempBooking}
+          isOpen={showPayment}
+          onClose={() => {
+            setShowPayment(false);
+            setTempBooking(null);
+          }}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }
