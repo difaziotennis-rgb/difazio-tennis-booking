@@ -72,22 +72,32 @@ export async function GET(request: Request) {
     // we'll need to actually interact with it to get real availability
     // This requires browser automation which is complex in serverless
     
-    // TEMPORARY: Return available by default until we implement full browser automation
-    // TODO: Implement Puppeteer or use a browser automation service
-    console.log(`Checking availability for ${date} at ${hour}:00 (${timeStr12})`);
+    // Try Browserless.io first if configured
+    const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
+    if (BROWSERLESS_API_KEY) {
+      try {
+        const browserlessUrl = new URL(request.url);
+        browserlessUrl.pathname = "/api/check-court-availability-browserless";
+        const browserlessResponse = await fetch(browserlessUrl.toString());
+        if (browserlessResponse.ok) {
+          return browserlessResponse;
+        }
+      } catch (error) {
+        console.error("Browserless check failed, falling back:", error);
+      }
+    }
     
-    // For production, you'll need to:
-    // 1. Use Puppeteer with @sparticus/chromium for Vercel
-    // 2. Or use a service like Browserless.io
-    // 3. Or find the Wix Bookings API endpoint
+    // Fallback: Return available by default if Browserless not configured
+    console.log(`Checking availability for ${date} at ${hour}:00 (${timeStr12})`);
+    console.log("Browserless API key not configured - defaulting to available");
     
     return NextResponse.json({
-      available: true, // Default to available until full implementation
+      available: true, // Default to available until Browserless is configured
       date,
       hour: parseInt(hour),
       checkedAt: new Date().toISOString(),
       source: "rhinebecktennis.com",
-      note: "Full browser automation needed - currently defaulting to available",
+      note: "Browserless.io not configured - add BROWSERLESS_API_KEY to enable automatic checking",
     });
 
   } catch (error: any) {
