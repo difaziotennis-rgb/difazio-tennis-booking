@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, CreditCard, Wallet, Smartphone } from "lucide-react";
 import { Booking } from "@/lib/types";
-import { PayPalPayment } from "@/lib/payments/paypal";
+import { PayPalPersonalPayment } from "@/lib/payments/paypal-personal";
 import { StripePaymentButton } from "@/lib/payments/stripe";
 import { VenmoPayment } from "@/lib/payments/venmo";
 
@@ -146,10 +146,9 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
               {selectedMethod === "paypal" && (
                 <div>
                   <h3 className="font-semibold text-primary-800 mb-4">Pay with PayPal</h3>
-                  <PayPalPayment
+                  <PayPalPersonalPayment
                     booking={booking}
                     onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
                   />
                 </div>
               )}
