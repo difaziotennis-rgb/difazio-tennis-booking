@@ -39,11 +39,17 @@ function BookingSuccessContent() {
       
       if (found) {
         setBooking(found);
-        // Show payment modal if payment was successful (from Stripe redirect)
+        // If payment was successful via Stripe redirect, update payment status
         if (paymentStatus === "success") {
           // Payment already completed via Stripe
           found.paymentStatus = "paid";
+          found.status = "confirmed";
           bookings.set(bookingId, found);
+          // Update in sessionStorage
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(`booking_${bookingId}`, JSON.stringify(found));
+          }
+          console.log("✅ Stripe payment confirmed for booking:", bookingId);
         }
       } else {
         console.error("Booking not found:", bookingId);
