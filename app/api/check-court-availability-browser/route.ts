@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Browser-based check using Puppeteer
  * DEPRECATED: Use /api/check-court-availability-browserless instead
