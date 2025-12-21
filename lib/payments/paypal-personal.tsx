@@ -15,7 +15,11 @@ interface PayPalPersonalPaymentProps {
  */
 export function PayPalPersonalPayment({ booking, onSuccess }: PayPalPersonalPaymentProps) {
   // Verify PayPal is configured
-  if (!PAYMENT_CONFIG.paypalMeUsername && !PAYMENT_CONFIG.paypalEmail) {
+  // Check both PayPal.me username and email
+  const hasPayPalMe = PAYMENT_CONFIG.paypalMeUsername && PAYMENT_CONFIG.paypalMeUsername.trim() !== "";
+  const hasPayPalEmail = PAYMENT_CONFIG.paypalEmail && PAYMENT_CONFIG.paypalEmail.trim() !== "";
+  
+  if (!hasPayPalMe && !hasPayPalEmail) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
         PayPal is not configured. Please add your PayPal.me username or email to the payment config.
