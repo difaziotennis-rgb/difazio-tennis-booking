@@ -18,7 +18,7 @@ export const PAYMENT_CONFIG = {
   
   // PayPal.me username (for personal accounts - e.g., "paypal.me/yourname" or just "yourname")
   // Leave empty to use email-based payment link instead
-  paypalMeUsername: "", // e.g., "derek-difazio" for paypal.me/derek-difazio
+  paypalMeUsername: "difaziotennis", // paypal.me/difaziotennis
   
   // Notification Email
   notificationEmail: "difaziotennis@gmail.com",
