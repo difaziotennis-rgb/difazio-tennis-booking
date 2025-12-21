@@ -44,17 +44,13 @@ export async function GET(request: Request) {
         : `${hourNum}:00 AM`;
 
     // Use Browserless.io to automate the browser
-    const browserlessResponse = await fetch(`${BROWSERLESS_URL}/content?token=${BROWSERLESS_API_KEY}`, {
+    // Browserless.io uses /function endpoint for custom Puppeteer code
+    const browserlessResponse = await fetch(`${BROWSERLESS_URL}/function?token=${BROWSERLESS_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: "https://rhinebecktennis.com/book-online",
-        gotoOptions: {
-          waitUntil: "networkidle2",
-          timeout: 30000,
-        },
         code: `
           // Navigate to booking page
           await page.goto('https://rhinebecktennis.com/book-online', {
