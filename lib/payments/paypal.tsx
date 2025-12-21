@@ -61,13 +61,22 @@ function PayPalButton({ booking, onSuccess, onError }: PayPalPaymentProps) {
 
 // Main PayPal Payment Component
 // DEPRECATED: This component is no longer used. Use PayPalPersonalPayment instead.
+// This file is kept for backward compatibility but should not be imported.
 export function PayPalPayment({ booking, onSuccess, onError }: PayPalPaymentProps) {
-  // Redirect to the new PayPal component
-  console.warn("Old PayPal component is being used. This should not happen. Using PayPalPersonalPayment instead.");
-  
-  // Import and use the new component instead
-  const { PayPalPersonalPayment } = require("./paypal-personal");
-  return <PayPalPersonalPayment booking={booking} onSuccess={() => onSuccess("")} />;
+  // This component should NOT be used anymore
+  // If you see this error, the site is using cached/old code
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+      <p className="font-semibold mb-2">⚠️ Old PayPal Component Detected</p>
+      <p className="mb-2">The site is using cached code. Please:</p>
+      <ol className="list-decimal list-inside space-y-1 mb-2">
+        <li>Redeploy in Vercel (without cache)</li>
+        <li>Clear browser cache completely</li>
+        <li>Test in Incognito/Private mode</li>
+      </ol>
+      <p className="text-xs mt-2">The new PayPal component (PayPalPersonalPayment) should be used instead.</p>
+    </div>
+  );
 
   return (
     <PayPalScriptProvider
