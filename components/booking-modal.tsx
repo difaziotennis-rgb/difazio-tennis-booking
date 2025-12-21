@@ -72,7 +72,7 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
     }
   };
 
-  const handlePaymentSuccess = (isStripePayment: boolean = false) => {
+  const handlePaymentSuccess = async (isStripePayment: boolean = false) => {
     if (!tempBooking) return;
 
     try {
