@@ -6,8 +6,7 @@
 
 @layer base {
   body {
-    @apply text-gray-900;
-    background-color: #ff1493; /* Bright pink (DeepPink) */
+    @apply bg-brightPink text-gray-900;
     font-family: 'Inter', system-ui, sans-serif;
   }
 }

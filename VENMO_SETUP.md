@@ -173,3 +173,6 @@ This means Venmo will automatically appear as an option when users pay.
 Once you have your PayPal Business credentials, I can help you add them to Vercel!
 
 
+
+
+

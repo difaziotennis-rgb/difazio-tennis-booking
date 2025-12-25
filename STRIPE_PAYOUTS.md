@@ -97,3 +97,6 @@ For new Stripe accounts, you may need to:
 
 Once you connect your bank account, payments will automatically transfer to it! 🎉
 
+
+
+

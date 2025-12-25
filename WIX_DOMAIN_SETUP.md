@@ -67,3 +67,6 @@ If you can't find DNS settings in Wix:
 Let me know what you see in your Wix dashboard and I can help you with the specific steps!
 
 
+
+
+

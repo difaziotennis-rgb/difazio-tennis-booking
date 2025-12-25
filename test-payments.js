@@ -144,3 +144,6 @@ console.log("   ✅ Venmo: Configured with phone number 6319015220");
 console.log("   ✅ PayPal: Configured with paypal.me/difaziotennis");
 console.log("   ⚠️  Stripe: Requires API keys in Vercel environment variables");
 
+
+
+

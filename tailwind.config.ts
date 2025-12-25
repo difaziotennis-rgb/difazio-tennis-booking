@@ -9,6 +9,7 @@ const config = {
   theme: {
     extend: {
       colors: {
+        brightPink: '#ff1493',
         // Hudson Valley theme - natural, elegant colors
         primary: {
           50: '#f0f7f4',
@@ -57,6 +58,9 @@ const config = {
 } satisfies Config
 
 export default config
+
+
+
 
 
 

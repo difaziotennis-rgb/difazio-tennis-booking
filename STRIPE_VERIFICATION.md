@@ -106,3 +106,6 @@ Make sure these are set in Vercel (Settings → Environment Variables):
 
 The code is ready - it just needs the environment variables to be properly set in Vercel!
 
+
+
+

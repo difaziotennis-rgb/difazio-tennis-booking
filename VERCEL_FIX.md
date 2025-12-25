@@ -34,3 +34,6 @@ If that doesn't work:
 The updated `vercel.json` I pushed should help, but you may still need to set Framework Preset to "Next.js" in the dashboard.
 
 
+
+
+

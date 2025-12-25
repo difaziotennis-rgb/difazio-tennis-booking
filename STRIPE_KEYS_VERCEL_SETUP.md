@@ -176,3 +176,6 @@ If you're still having issues:
 3. Verify keys are correct in Stripe dashboard
 4. Make sure you're testing in Incognito mode
 
+
+
+

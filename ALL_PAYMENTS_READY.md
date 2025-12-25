@@ -72,3 +72,6 @@ If you see "Stripe is not configured" after adding keys:
 
 All payment methods are configured and ready to accept payments!
 
+
+
+
