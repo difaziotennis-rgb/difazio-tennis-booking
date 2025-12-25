@@ -91,7 +91,7 @@ export default function PaymentSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brightPink">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-primary-100 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
