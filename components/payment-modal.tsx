@@ -164,9 +164,9 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
               )}
 
               {selectedMethod === "stripe" && (
-                <div className="w-full relative z-10" style={{ position: 'relative', zIndex: 10 }}>
+                <div className="w-full relative z-50" style={{ position: 'relative', zIndex: 50 }}>
                   <h3 className="font-semibold text-primary-800 mb-4">Pay with Card</h3>
-                  <div className="relative z-10" style={{ position: 'relative', zIndex: 10 }}>
+                  <div className="relative z-50" style={{ position: 'relative', zIndex: 50 }}>
                     <StripePaymentButton
                       booking={booking}
                       onSuccess={() => {
