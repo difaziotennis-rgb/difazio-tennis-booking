@@ -16,14 +16,16 @@ export function initializeMockData() {
   
   const today = new Date();
   
-  // Add available slots for the next 90 days, 9 AM to 7 PM (including Sundays)
+  // Add available slots for the next 90 days
   for (let dayOffset = 0; dayOffset < 90; dayOffset++) {
     const date = new Date(today);
     date.setDate(date.getDate() + dayOffset);
     
     const dateStr = date.toISOString().split('T')[0];
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const isSunday = dayOfWeek === 0;
     
-    // Available hours: 9 AM to 7 PM (9-19)
+    // Regular hours: 9 AM to 7 PM (9-19) for all days
     for (let hour = 9; hour <= 19; hour++) {
       const id = `${dateStr}-${hour}`;
       // Only create if it doesn't exist (preserves booked slots)
@@ -33,6 +35,21 @@ export function initializeMockData() {
           date: dateStr,
           hour,
           available: false, // All slots unavailable by default
+          booked: false,
+        });
+      }
+    }
+    
+    // 3 AM (hour 3) only on Sundays
+    if (isSunday) {
+      const id = `${dateStr}-3`;
+      // Only create if it doesn't exist (preserves booked slots)
+      if (!timeSlots.has(id)) {
+        timeSlots.set(id, {
+          id,
+          date: dateStr,
+          hour: 3,
+          available: true, // 3am is available by default on Sundays
           booked: false,
         });
       }

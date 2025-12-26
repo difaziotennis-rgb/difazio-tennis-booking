@@ -90,8 +90,10 @@ export function Calendar({ onDateSelect, onTimeSlotSelect, selectedDate }: Calen
   const getTimeSlotsForDate = (date: Date): TimeSlot[] => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const slots: TimeSlot[] = [];
+    const dayOfWeek = date.getDay(); // 0 = Sunday
+    const isSunday = dayOfWeek === 0;
     
-    // Ensure slots exist for this date (initialize if needed)
+    // Regular hours: 9 AM to 7 PM (9-19)
     for (let hour = 9; hour <= 19; hour++) {
       const id = `${dateStr}-${hour}`;
       let slot = timeSlots.get(id);
@@ -109,6 +111,29 @@ export function Calendar({ onDateSelect, onTimeSlotSelect, selectedDate }: Calen
       }
       
       // Only show slots that are available or booked (hide unavailable ones)
+      if (slot.available || slot.booked) {
+        slots.push(slot);
+      }
+    }
+    
+    // 3 AM (hour 3) only on Sundays
+    if (isSunday) {
+      const id = `${dateStr}-3`;
+      let slot = timeSlots.get(id);
+      
+      // Create slot if it doesn't exist
+      if (!slot) {
+        slot = {
+          id,
+          date: dateStr,
+          hour: 3,
+          available: true, // 3am is available by default on Sundays
+          booked: false,
+        };
+        timeSlots.set(id, slot);
+      }
+      
+      // Show 3am slot if available or booked
       if (slot.available || slot.booked) {
         slots.push(slot);
       }
