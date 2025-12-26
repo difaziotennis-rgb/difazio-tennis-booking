@@ -16,19 +16,20 @@ interface StripePaymentButtonProps {
 export function StripePaymentButton({ booking, onSuccess, onError }: StripePaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePayment = async () => {
+  const handlePayment = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (isLoading) return;
     
     try {
       setIsLoading(true);
       
-      // Create the booking first
+      // Create the booking first (but don't wait for it to complete)
       onSuccess();
       
-      // Small delay to ensure booking is saved
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Redirect to Stripe payment link
+      // IMMEDIATELY redirect to Stripe - don't wait
+      // The booking will be saved in the background
       window.location.href = STRIPE_PAYMENT_LINK;
     } catch (error: any) {
       setIsLoading(false);
@@ -38,49 +39,75 @@ export function StripePaymentButton({ booking, onSuccess, onError }: StripePayme
 
   return (
     <div 
-      className="w-full"
       style={{
+        width: '100%',
         display: 'block',
         visibility: 'visible',
         opacity: 1,
         position: 'relative',
-        zIndex: 9999,
-        width: '100%'
+        zIndex: 99999,
+        margin: '0',
+        padding: '0'
       }}
     >
       <button
         type="button"
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full px-6 py-4 bg-[#635BFF] hover:bg-[#5851EA] text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
         style={{
-          display: 'flex',
-          visibility: 'visible',
-          opacity: isLoading ? 0.5 : 1,
-          minHeight: '56px',
-          zIndex: 9999,
-          position: 'relative',
           width: '100%',
-          cursor: 'pointer',
+          padding: '16px 24px',
+          backgroundColor: '#635BFF',
+          color: '#FFFFFF',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          borderRadius: '8px',
           border: 'none',
-          outline: 'none'
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          transition: 'all 0.2s',
+          opacity: isLoading ? 0.6 : 1,
+          minHeight: '56px',
+          zIndex: 99999,
+          position: 'relative',
+          visibility: 'visible'
+        }}
+        onMouseEnter={(e) => {
+          if (!isLoading) {
+            e.currentTarget.style.backgroundColor = '#5851EA';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isLoading) {
+            e.currentTarget.style.backgroundColor = '#635BFF';
+          }
         }}
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" style={{ display: 'inline-block' }} />
-            <span style={{ display: 'inline-block' }}>Processing...</span>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Processing...</span>
           </>
         ) : (
           <>
-            <CreditCard className="h-5 w-5" style={{ display: 'inline-block' }} />
-            <span style={{ display: 'inline-block', fontSize: '18px', fontWeight: 'bold' }}>Pay with Card</span>
+            <CreditCard className="h-5 w-5" />
+            <span>Pay with Card</span>
           </>
         )}
       </button>
       <p 
-        className="text-xs text-gray-500 text-center mt-2"
-        style={{ display: 'block', visibility: 'visible' }}
+        style={{ 
+          fontSize: '12px',
+          color: '#6B7280',
+          textAlign: 'center',
+          marginTop: '8px',
+          display: 'block',
+          visibility: 'visible'
+        }}
       >
         Secure payment via Stripe
       </p>

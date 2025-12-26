@@ -73,6 +73,11 @@ export function BookingModal({ slot, isOpen, onClose, onBookingComplete }: Booki
   };
 
   const handlePaymentSuccess = async (isStripePayment: boolean = false) => {
+    // If Stripe payment, don't do anything - let Stripe handle redirect
+    if (isStripePayment) {
+      console.log("Stripe payment initiated - Stripe will handle redirect");
+      return;
+    }
     if (!tempBooking) return;
 
     try {

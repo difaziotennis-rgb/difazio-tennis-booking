@@ -191,7 +191,10 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentSuccess }: Pay
                     <StripePaymentButton
                       booking={booking}
                       onSuccess={() => {
-                        onPaymentSuccess();
+                        // For Stripe, create booking but DON'T close modal or redirect
+                        // Stripe payment link will handle the redirect
+                        // Just create the booking silently
+                        onPaymentSuccess(true); // Pass true to indicate it's Stripe
                       }}
                       onError={handlePaymentError}
                     />
