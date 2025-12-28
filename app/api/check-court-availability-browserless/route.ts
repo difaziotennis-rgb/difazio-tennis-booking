@@ -133,12 +133,32 @@ export async function GET(request: Request) {
     
     if (clicked) {
       dateClicked = true;
-      // Wait for time slots to appear - try multiple selectors
+      // Wait a bit for date selection to register
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // After selecting date, try clicking "Next" button to proceed to time selection
       try {
-        await page.waitForSelector('[class*="time"], [class*="slot"], [class*="hour"], button[class*="available"]', { timeout: 5000 }).catch(() => {});
-      } catch (e) {}
-      // Also wait a bit for dynamic content to load
-      await new Promise(resolve => setTimeout(resolve, 3000));
+        const nextClicked = await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          for (const btn of buttons) {
+            const text = btn.textContent?.trim();
+            if (text && (text.toLowerCase() === 'next' || text.toLowerCase().includes('next'))) {
+              if (btn instanceof HTMLElement && !btn.hasAttribute('disabled')) {
+                btn.click();
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+        
+        if (nextClicked) {
+          // Wait for time slots to appear after clicking Next
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      } catch (e) {
+        // Continue even if Next click fails
+      }
     }
   } catch (e) {
     // Continue even if date click fails
