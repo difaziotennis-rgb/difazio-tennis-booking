@@ -186,15 +186,53 @@ export async function GET(request: Request) {
       foundElements: [],
       allButtons: [],
       allText: [],
+      allClickableElements: [],
+      calendarElements: [],
       hasIframe: document.querySelectorAll('iframe').length > 0,
       iframeCount: document.querySelectorAll('iframe').length
     };
+    
+    // Find ALL clickable elements (not just buttons) to see what's available
+    const allClickable = document.querySelectorAll('button, [role="button"], a, div[class*="click"], div[class*="slot"], div[class*="time"], td, [class*="calendar"] button, [class*="calendar"] td');
+    allClickable.forEach((el) => {
+      const text = el.textContent?.trim();
+      if (text && text.length < 50) {
+        debugInfo.allClickableElements.push({
+          text: text,
+          tag: el.tagName,
+          classes: el.className,
+          disabled: el.hasAttribute('disabled') || el.classList.contains('disabled'),
+          dataDate: el.getAttribute('data-date') || null
+        });
+      }
+    });
+    
+    // Look for calendar-related elements
+    const calendarSelectors = [
+      '[class*="calendar"]',
+      '[class*="date-picker"]',
+      '[class*="datepicker"]',
+      '[class*="booking"]',
+      '[id*="calendar"]',
+      '[id*="date"]'
+    ];
+    calendarSelectors.forEach(selector => {
+      try {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          debugInfo.calendarElements.push({
+            selector: selector,
+            count: elements.length
+          });
+        }
+      } catch (e) {}
+    });
     
     // First, let's see what buttons and elements are on the page
     const allButtons = document.querySelectorAll('button, [role="button"], a[class*="button"], div[class*="button"]');
     allButtons.forEach((btn, index) => {
       const text = btn.textContent?.trim();
-      if (text && text.length < 20) { // Only short text (likely to be times)
+      if (text && text.length < 50) { // Increased length limit
         debugInfo.allButtons.push({
           text: text,
           classes: btn.className,
