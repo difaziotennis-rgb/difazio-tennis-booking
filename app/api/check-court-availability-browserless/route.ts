@@ -62,21 +62,36 @@ export async function GET(request: Request) {
         },
         signal: controller.signal,
         body: `export default async function ({ page }) {
-  // Navigate to booking page
-  await page.goto('https://rhinebecktennis.com/book-online', {
-    waitUntil: 'domcontentloaded',
-    timeout: 15000
-  });
+  // Set shorter timeouts to prevent hanging
+  page.setDefaultNavigationTimeout(10000);
+  page.setDefaultTimeout(10000);
   
-  // Wait for page to load
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Navigate to booking page with shorter timeout
+  try {
+    await page.goto('https://rhinebecktennis.com/book-online', {
+      waitUntil: 'domcontentloaded',
+      timeout: 10000
+    });
+  } catch (e) {
+    // If navigation fails, return error info
+    return {
+      data: {
+        error: "Navigation failed: " + (e.message || "unknown"),
+        timeSlots: [],
+        pageTitle: "Navigation Error"
+      },
+      type: "application/json"
+    };
+  }
   
-  // Try to find and click "Book Now" button using evaluate for more reliability
+  // Quick wait for page to render
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Try to click "Book Now" button
   let bookNowClicked = false;
   try {
     bookNowClicked = await page.evaluate(() => {
-      // Find all clickable elements
-      const elements = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+      const elements = Array.from(document.querySelectorAll('a, button'));
       for (const el of elements) {
         const text = el.textContent?.trim();
         if (text && text.toLowerCase().includes('book now')) {
@@ -90,101 +105,41 @@ export async function GET(request: Request) {
     });
     
     if (bookNowClicked) {
-      // Wait for calendar/modal to appear - try to wait for a calendar element
-      try {
-        await page.waitForSelector('[class*="calendar"], [class*="date"], iframe', { timeout: 5000 }).catch(() => {});
-      } catch (e) {}
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   } catch (e) {
-    console.log('Could not find Book Now button, continuing...');
+    // Continue even if Book Now click fails
   }
   
-  // Wait a bit for calendar to appear (reduced)
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Try to click on the date (day ${dayOfMonth})
-  // We need to find and click the date in the calendar to see time slots
+  // Try to click date - simplified approach
   let dateClicked = false;
   try {
-    // First, check if there's an iframe for the calendar widget
-    const frames = page.frames();
-    let targetFrame = page.mainFrame();
-    
-    // Look for calendar/booking iframes
-    for (const frame of frames) {
-      const frameUrl = frame.url();
-      if (frameUrl.includes('calendar') || frameUrl.includes('booking') || frameUrl.includes('wix')) {
-        targetFrame = frame;
-        break;
-      }
-    }
-    
-    // Try multiple strategies: first with selectors, then with evaluate
-    const dateSelectors = [
-      \`[aria-label*="${dayOfMonth}"]\`,
-      \`[data-date="${date}"]\`,
-      \`[data-date*="${dayOfMonth}"]\`,
-      \`[aria-label*="January ${dayOfMonth}"], [aria-label*="Jan ${dayOfMonth}"]\`
-    ];
-    
-    for (const selector of dateSelectors) {
-      try {
-        const dateButton = await targetFrame.$(selector);
-        if (dateButton) {
-          await dateButton.click();
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          dateClicked = true;
-          break;
-        }
-      } catch (e) {
-        // Try next selector
-      }
-    }
-    
-    // If selectors didn't work, use evaluate to find by text content
-    if (!dateClicked) {
-      const clicked = await targetFrame.evaluate((day, targetDate) => {
-        // Try to find date elements - buttons, cells, divs in calendar
-        const selectors = 'button, [role="button"], td, div[class*="date"], a[class*="date"], div[class*="day"], button[class*="day"]';
-        const elements = Array.from(document.querySelectorAll(selectors));
-        const dayStr = String(day);
-        
-        for (const el of elements) {
-          const text = el.textContent?.trim();
-          // Match exact day number or date string
-          if (text === dayStr || text === targetDate || (el.getAttribute('data-date') === targetDate)) {
-            if (el instanceof HTMLElement) {
-              // Check if element is not disabled
-              const isDisabled = el.hasAttribute('disabled') || 
-                                el.classList.contains('disabled') ||
-                                el.classList.contains('unavailable');
-              if (!isDisabled) {
-                el.click();
-                return true;
-              }
-            }
+    const clicked = await page.evaluate((day, targetDate) => {
+      const elements = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"], a[class*="date"], div[class*="day"], button[class*="day"], [data-date]'));
+      const dayStr = String(day);
+      
+      for (const el of elements) {
+        const text = el.textContent?.trim();
+        const dataDate = el.getAttribute('data-date');
+        if (text === dayStr || dataDate === targetDate || text === targetDate) {
+          if (el instanceof HTMLElement && !el.hasAttribute('disabled')) {
+            el.click();
+            return true;
           }
         }
-        return false;
-      }, ${dayOfMonth}, "${date}");
-      
-      if (clicked) {
-        // Wait for time slots to load - try to wait for time slot elements
-        try {
-          await targetFrame.waitForSelector('[class*="time"], [class*="slot"], button', { timeout: 3000 }).catch(() => {});
-        } catch (e) {}
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        dateClicked = true;
       }
+      return false;
+    }, ${dayOfMonth}, "${date}");
+    
+    if (clicked) {
+      dateClicked = true;
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   } catch (e) {
-    console.log('Could not click date, continuing...', e);
+    // Continue even if date click fails
   }
   
-  // Extract available time slots from the calendar
-  // We need to find elements that represent available times (not unavailable/booked ones)
-  // Also check if we're in an iframe
+  // Extract available time slots - simplified
   const extractionResult = await page.evaluate(() => {
     const slots = [];
     const debugInfo = {
