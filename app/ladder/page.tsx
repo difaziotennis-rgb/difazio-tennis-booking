@@ -96,13 +96,27 @@ export default function LadderPage() {
     }
 
     try {
-      // Try to find the club by name (case-insensitive)
+      // Ensure clubs are loaded
+      if (clubs.length === 0) {
+        await fetchClubs()
+      }
+
+      // Try to find the club by name (case-insensitive, partial match)
       const normalizedInput = clubName.trim().toLowerCase()
-      const foundClub = clubs.find((club: any) => 
-        club.name.toLowerCase() === normalizedInput || 
-        club.slug?.toLowerCase() === normalizedInput ||
-        club.slug === createSlug(clubName.trim())
-      )
+      const inputSlug = createSlug(clubName.trim())
+      
+      const foundClub = clubs.find((club: any) => {
+        const clubNameLower = club.name.toLowerCase()
+        const clubSlugLower = (club.slug || createSlug(club.name)).toLowerCase()
+        
+        return (
+          clubNameLower === normalizedInput ||
+          clubNameLower.includes(normalizedInput) ||
+          clubSlugLower === normalizedInput ||
+          clubSlugLower === inputSlug ||
+          clubSlugLower.includes(inputSlug)
+        )
+      })
 
       if (foundClub) {
         // Use the actual slug from the database
@@ -114,9 +128,8 @@ export default function LadderPage() {
         router.push(`/club/${slug}`)
       }
     } catch (error) {
-      // Fallback: try with slug conversion
-      const slug = createSlug(clubName.trim())
-      router.push(`/club/${slug}`)
+      console.error('Error navigating to club:', error)
+      setError('Failed to find club. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -193,7 +206,7 @@ export default function LadderPage() {
                       value={selectedClubId}
                       onValueChange={handleClubSelect}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a club to go directly..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -207,6 +220,9 @@ export default function LadderPage() {
                     <p className="text-xs text-muted-foreground">
                       Or enter club name below
                     </p>
+                    <div className="text-xs text-muted-foreground">
+                      Found {clubs.length} club{clubs.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
