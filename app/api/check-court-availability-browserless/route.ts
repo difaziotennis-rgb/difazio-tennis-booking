@@ -262,6 +262,7 @@ export async function GET(request: Request) {
     // Browserless returns { data: {...}, type: "..." }
     const responseData = result.data || result;
     const timeSlots: string[] = responseData.timeSlots || [];
+    const debugInfo = responseData.debug || {};
 
     // Check if our time is in the list
     const isAvailable = timeSlots.some(slot => {
