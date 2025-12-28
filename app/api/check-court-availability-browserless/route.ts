@@ -63,100 +63,102 @@ export async function GET(request: Request) {
         signal: controller.signal,
         body: JSON.stringify({
         code: `
-          // Navigate to booking page
-          await page.goto('https://rhinebecktennis.com/book-online', {
-            waitUntil: 'networkidle2',
-            timeout: 30000
-          });
-          
-          // Wait for page to load
-          await page.waitForTimeout(3000);
-          
-          // Try to find and click "Book Now" button
-          try {
-            const bookNowSelectors = [
-              'button:has-text("Book Now")',
-              'a:has-text("Book Now")',
-              '[data-testid*="book"]',
-              'button[class*="book"]',
-              'a[class*="book"]'
-            ];
+          (async () => {
+            // Navigate to booking page
+            await page.goto('https://rhinebecktennis.com/book-online', {
+              waitUntil: 'networkidle2',
+              timeout: 30000
+            });
             
-            let clicked = false;
-            for (const selector of bookNowSelectors) {
-              try {
-                const button = await page.$(selector);
-                if (button) {
-                  await button.click();
-                  await page.waitForTimeout(2000);
-                  clicked = true;
-                  break;
-                }
-              } catch (e) {}
-            }
-          } catch (e) {
-            console.log('Could not find Book Now button, continuing...');
-          }
-          
-          // Wait for calendar to appear
-          await page.waitForTimeout(2000);
-          
-          // Try to click on the date (day ${dayOfMonth})
-          try {
-            const dateSelectors = [
-              \`button[aria-label*="${dayOfMonth}"]\`,
-              \`[data-date="${date}"]\`,
-              \`button:has-text("${dayOfMonth}")\`,
-              \`td:has-text("${dayOfMonth}")\`,
-              \`[class*="calendar"] button:has-text("${dayOfMonth}")\`
-            ];
+            // Wait for page to load
+            await page.waitForTimeout(3000);
             
-            let dateClicked = false;
-            for (const selector of dateSelectors) {
-              try {
-                const dateButton = await page.$(selector);
-                if (dateButton) {
-                  await dateButton.click();
-                  await page.waitForTimeout(2000);
-                  dateClicked = true;
-                  break;
-                }
-              } catch (e) {}
-            }
-          } catch (e) {
-            console.log('Could not click date, continuing...');
-          }
-          
-          // Extract available time slots
-          const timeSlots = await page.evaluate(() => {
-            const slots = [];
-            const selectors = [
-              'button[class*="time"]',
-              '[data-testid*="time"]',
-              '[class*="time-slot"]',
-              '[class*="slot"]',
-              'button[class*="available"]',
-              '[role="button"][class*="time"]'
-            ];
-            
-            for (const selector of selectors) {
-              const elements = document.querySelectorAll(selector);
-              elements.forEach((el) => {
-                const text = el.textContent?.trim();
-                if (text && (text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/) || text.match(/\\d{1,2}:00/))) {
-                  slots.push(text);
-                }
-              });
+            // Try to find and click "Book Now" button
+            try {
+              const bookNowSelectors = [
+                'button:has-text("Book Now")',
+                'a:has-text("Book Now")',
+                '[data-testid*="book"]',
+                'button[class*="book"]',
+                'a[class*="book"]'
+              ];
+              
+              let clicked = false;
+              for (const selector of bookNowSelectors) {
+                try {
+                  const button = await page.$(selector);
+                  if (button) {
+                    await button.click();
+                    await page.waitForTimeout(2000);
+                    clicked = true;
+                    break;
+                  }
+                } catch (e) {}
+              }
+            } catch (e) {
+              console.log('Could not find Book Now button, continuing...');
             }
             
-            return [...new Set(slots)]; // Remove duplicates
-          });
-          
-          return JSON.stringify({
-            timeSlots: timeSlots,
-            pageTitle: await page.title(),
-            url: page.url()
-          });
+            // Wait for calendar to appear
+            await page.waitForTimeout(2000);
+            
+            // Try to click on the date (day ${dayOfMonth})
+            try {
+              const dateSelectors = [
+                \`button[aria-label*="${dayOfMonth}"]\`,
+                \`[data-date="${date}"]\`,
+                \`button:has-text("${dayOfMonth}")\`,
+                \`td:has-text("${dayOfMonth}")\`,
+                \`[class*="calendar"] button:has-text("${dayOfMonth}")\`
+              ];
+              
+              let dateClicked = false;
+              for (const selector of dateSelectors) {
+                try {
+                  const dateButton = await page.$(selector);
+                  if (dateButton) {
+                    await dateButton.click();
+                    await page.waitForTimeout(2000);
+                    dateClicked = true;
+                    break;
+                  }
+                } catch (e) {}
+              }
+            } catch (e) {
+              console.log('Could not click date, continuing...');
+            }
+            
+            // Extract available time slots
+            const timeSlots = await page.evaluate(() => {
+              const slots = [];
+              const selectors = [
+                'button[class*="time"]',
+                '[data-testid*="time"]',
+                '[class*="time-slot"]',
+                '[class*="slot"]',
+                'button[class*="available"]',
+                '[role="button"][class*="time"]'
+              ];
+              
+              for (const selector of selectors) {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach((el) => {
+                  const text = el.textContent?.trim();
+                  if (text && (text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/) || text.match(/\\d{1,2}:00/))) {
+                    slots.push(text);
+                  }
+                });
+              }
+              
+              return [...new Set(slots)]; // Remove duplicates
+            });
+            
+            return JSON.stringify({
+              timeSlots: timeSlots,
+              pageTitle: await page.title(),
+              url: page.url()
+            });
+          })();
         `,
       }),
     });

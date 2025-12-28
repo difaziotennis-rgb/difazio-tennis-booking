@@ -47,7 +47,7 @@ export async function GET() {
       signal: controller.signal,
       body: JSON.stringify({
         code: `
-          return JSON.stringify({
+          JSON.stringify({
             success: true,
             message: "Browserless connection test successful"
           });
