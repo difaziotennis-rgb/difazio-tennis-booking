@@ -150,7 +150,12 @@ export async function GET(request: Request) {
         for (const btn of buttons) {
           const text = btn.textContent?.trim();
           if (text === String(day) || text === \`\${day}\`) {
-            (btn as HTMLElement).click();
+            // Use click() method directly - no TypeScript cast needed in browser context
+            if (btn instanceof HTMLElement) {
+              btn.click();
+            } else if (btn.click) {
+              btn.click();
+            }
             return true;
           }
         }
