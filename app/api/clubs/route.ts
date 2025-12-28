@@ -35,6 +35,9 @@ export async function GET(request: Request) {
           env: {
             hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
             hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            urlValue: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET',
+            urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+            keyPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) || 'NOT SET',
           }
         },
         { status: 500 }
@@ -51,6 +54,9 @@ export async function GET(request: Request) {
         env: {
           hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
           hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          urlValue: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET',
+          urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+          keyPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) || 'NOT SET',
         }
       },
       { status: 500 }
