@@ -107,10 +107,18 @@ ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow all operations (we handle auth in the app)
-CREATE POLICY IF NOT EXISTS "Allow all on clubs" ON clubs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Allow all on site_admin" ON site_admin FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Allow all on players" ON players FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Allow all on matches" ON matches FOR ALL USING (true) WITH CHECK (true);
+-- Drop existing policies first, then create new ones
+DROP POLICY IF EXISTS "Allow all on clubs" ON clubs;
+CREATE POLICY "Allow all on clubs" ON clubs FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all on site_admin" ON site_admin;
+CREATE POLICY "Allow all on site_admin" ON site_admin FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all on players" ON players;
+CREATE POLICY "Allow all on players" ON players FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all on matches" ON matches;
+CREATE POLICY "Allow all on matches" ON matches FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================
 -- 8. Create updated_at trigger function
