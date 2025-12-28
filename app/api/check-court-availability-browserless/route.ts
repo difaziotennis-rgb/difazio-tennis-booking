@@ -229,25 +229,59 @@ export async function GET(request: Request) {
       }
     });
     
-    // Try multiple selectors to find time slot elements
-    // Look in all possible containers for time-related elements
+    // Try to find time slots by looking at ALL elements on the page
+    // Not just buttons - time slots might be in divs, spans, or other elements
+    const allElements = document.querySelectorAll('*');
+    const seenText = new Set();
+    
+    allElements.forEach((el) => {
+      const text = el.textContent?.trim();
+      if (!text || text.length > 20) return; // Skip long text
+      if (seenText.has(text)) return; // Skip duplicates
+      
+      // Skip calendar day numbers (days 1-31)
+      const isDayNumber = /^\\d{1,2}$/.test(text);
+      if (isDayNumber) {
+        const num = parseInt(text);
+        if (num >= 1 && num <= 31) {
+          return; // Skip calendar day numbers
+        }
+      }
+      
+      // Match actual time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
+      const isTimePattern = /\\d{1,2}:\\d{2}\\s*(AM|PM)/i.test(text) || 
+                           /\\d{1,2}\\s*(AM|PM)/i.test(text) ||
+                           /\\d{1,2}:00/.test(text);
+      
+      if (isTimePattern) {
+        // Check if element or parent is clickable/not disabled
+        const isClickable = el.tagName === 'BUTTON' || 
+                           el.tagName === 'A' ||
+                           el.getAttribute('role') === 'button' ||
+                           el.onclick !== null ||
+                           el.closest('button') !== null;
+        
+        const isDisabled = el.hasAttribute('disabled') || 
+                          el.classList.contains('disabled') ||
+                          el.classList.contains('unavailable') ||
+                          el.classList.contains('booked') ||
+                          el.closest('[disabled]') !== null;
+        
+        if (isClickable && !isDisabled) {
+          slots.push(text);
+          seenText.add(text);
+        }
+      }
+    });
+    
+    // Also try specific selectors as fallback
     const selectors = [
-      // Time-specific selectors
       'button[class*="time"]:not([disabled])',
       '[class*="time-slot"]:not([disabled])',
       '[class*="slot"]:not([disabled]):not([class*="date"])',
-      '[class*="hour"]:not([disabled])',
-      '[data-testid*="time"]:not([disabled])',
-      'button[class*="available"]',
-      '[role="button"][class*="time"]:not([disabled])',
-      // Look in time slot containers
-      '[class*="time-slot"] button:not([disabled])',
-      '[class*="slot"] button:not([disabled]):not([class*="date"])',
-      // Generic buttons (but we'll filter out day numbers)
-      'button:not([disabled]):not([class*="disabled"]):not([class*="unavailable"]):not([class*="Day"])'
+      'button:not([disabled]):not([class*="Day"])'
     ];
     
-    // Try each selector
     for (const selector of selectors) {
       try {
         const elements = document.querySelectorAll(selector);
@@ -256,35 +290,25 @@ export async function GET(request: Request) {
           const text = el.textContent?.trim();
           if (!text) return;
           
-          // Skip calendar day numbers (days 1-31) - these are NOT times
           const isDayNumber = /^\\d{1,2}$/.test(text);
-          if (isDayNumber) {
-            const num = parseInt(text);
-            if (num >= 1 && num <= 31) {
-              return; // Skip calendar day numbers
-            }
+          if (isDayNumber && parseInt(text) >= 1 && parseInt(text) <= 31) {
+            return;
           }
           
-          // Match actual time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
-          // Must include AM/PM or colon to be a time (not just a number)
-          const isTimePattern = text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/i) || 
-                               text.match(/\\d{1,2}\\s*(AM|PM)/i) ||
-                               text.match(/\\d{1,2}:00/);
+          const isTimePattern = /\\d{1,2}:\\d{2}\\s*(AM|PM)/i.test(text) || 
+                               /\\d{1,2}\\s*(AM|PM)/i.test(text) ||
+                               /\\d{1,2}:00/.test(text);
           
-          if (isTimePattern) {
-            // Only add if it looks like a time and element is clickable/enabled
+          if (isTimePattern && !seenText.has(text)) {
             const isDisabled = el.hasAttribute('disabled') || 
-                              el.classList.contains('disabled') ||
-                              el.classList.contains('unavailable') ||
-                              el.classList.contains('booked');
+                              el.classList.contains('disabled');
             if (!isDisabled) {
               slots.push(text);
+              seenText.add(text);
             }
           }
         });
-      } catch (e) {
-        // Continue if selector fails
-      }
+      } catch (e) {}
     }
     
     // Remove duplicates
