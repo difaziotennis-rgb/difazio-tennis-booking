@@ -101,41 +101,85 @@ export async function GET(request: Request) {
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   // Try to click on the date (day ${dayOfMonth})
+  // We need to find and click the date in the calendar to see time slots
+  let dateClicked = false;
   try {
+    // First, try to find the calendar widget - Wix bookings often use iframes
+    const calendarFrame = await page.$('iframe[src*="calendar"], iframe[src*="booking"], iframe[src*="wix"]');
+    let calendarPage = page;
+    
+    if (calendarFrame) {
+      // If there's an iframe, get its content
+      const frame = await calendarFrame.contentFrame();
+      if (frame) {
+        calendarPage = frame as any;
+      }
+    }
+    
+    // Try multiple strategies to find and click the date
     const dateSelectors = [
       \`button[aria-label*="${dayOfMonth}"]\`,
       \`[data-date="${date}"]\`,
+      \`[data-date*="${dayOfMonth}"]\`,
       \`button:has-text("${dayOfMonth}")\`,
       \`td:has-text("${dayOfMonth}")\`,
-      \`[class*="calendar"] button:has-text("${dayOfMonth}")\`
+      \`[class*="calendar"] button:has-text("${dayOfMonth}")\`,
+      \`[class*="date"] button:has-text("${dayOfMonth}")\`,
+      \`button[aria-label*="January ${dayOfMonth}"], button[aria-label*="Jan ${dayOfMonth}"]\`
     ];
     
-    let dateClicked = false;
     for (const selector of dateSelectors) {
       try {
-        const dateButton = await page.$(selector);
+        const dateButton = await calendarPage.$(selector);
         if (dateButton) {
           await dateButton.click();
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Wait longer for time slots to load
           dateClicked = true;
           break;
         }
-      } catch (e) {}
+      } catch (e) {
+        // Try next selector
+      }
+    }
+    
+    // If date clicking didn't work, try using page.evaluate to find and click
+    if (!dateClicked) {
+      const clicked = await calendarPage.evaluate((day) => {
+        // Try to find the date button by text content
+        const buttons = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"]'));
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim();
+          if (text === String(day) || text === \`\${day}\`) {
+            (btn as HTMLElement).click();
+            return true;
+          }
+        }
+        return false;
+      }, ${dayOfMonth});
+      
+      if (clicked) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        dateClicked = true;
+      }
     }
   } catch (e) {
-    console.log('Could not click date, continuing...');
+    console.log('Could not click date, continuing...', e);
   }
   
   // Extract available time slots from the calendar
   // We need to find elements that represent available times (not unavailable/booked ones)
+  // Also check if we're in an iframe
   const extractionResult = await page.evaluate(() => {
     const slots = [];
-    const debugInfo = {
+    const debugInfo: any = {
       pageTitle: document.title,
       url: window.location.href,
       foundElements: [],
       allButtons: [],
-      allText: []
+      allText: [],
+      hasIframe: document.querySelectorAll('iframe').length > 0,
+      iframeCount: document.querySelectorAll('iframe').length,
+      dateClicked: false // Will be updated if we detect calendar
     };
     
     // First, let's see what buttons and elements are on the page
@@ -202,7 +246,7 @@ export async function GET(request: Request) {
   });
   
   const timeSlots = extractionResult.slots || [];
-  const debugInfo = extractionResult.debug || {};
+  const debugInfoFromPage = extractionResult.debug || {};
   
   // Also get page info for debugging
   const pageTitle = await page.title();
@@ -214,7 +258,8 @@ export async function GET(request: Request) {
       pageTitle: pageTitle,
       url: pageUrl,
       debug: {
-        ...debugInfo,
+        ...debugInfoFromPage,
+        dateClicked: dateClicked,
         extractionResultKeys: Object.keys(extractionResult || {}),
         hasDebug: !!extractionResult?.debug
       }
