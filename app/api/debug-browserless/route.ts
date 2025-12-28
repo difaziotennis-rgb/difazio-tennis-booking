@@ -46,12 +46,12 @@ export async function GET() {
       },
       signal: controller.signal,
       body: JSON.stringify({
-        code: `
-          JSON.stringify({
-            success: true,
-            message: "Browserless connection test successful"
-          });
-        `,
+        code: `async (page) => {
+  return JSON.stringify({
+    success: true,
+    message: "Browserless connection test successful"
+  });
+}`,
       }),
     });
 
