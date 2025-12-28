@@ -128,8 +128,29 @@ export async function GET(request: Request) {
   
   // Extract available time slots from the calendar
   // We need to find elements that represent available times (not unavailable/booked ones)
-  const timeSlots = await page.evaluate(() => {
+  const extractionResult = await page.evaluate(() => {
     const slots = [];
+    const debugInfo = {
+      pageTitle: document.title,
+      url: window.location.href,
+      foundElements: [],
+      allButtons: [],
+      allText: []
+    };
+    
+    // First, let's see what buttons and elements are on the page
+    const allButtons = document.querySelectorAll('button, [role="button"], a[class*="button"], div[class*="button"]');
+    allButtons.forEach((btn, index) => {
+      const text = btn.textContent?.trim();
+      if (text && text.length < 20) { // Only short text (likely to be times)
+        debugInfo.allButtons.push({
+          text: text,
+          classes: btn.className,
+          disabled: btn.hasAttribute('disabled') || btn.classList.contains('disabled'),
+          tagName: btn.tagName
+        });
+      }
+    });
     
     // Try multiple selectors to find time slot elements
     const selectors = [
@@ -148,6 +169,7 @@ export async function GET(request: Request) {
     for (const selector of selectors) {
       try {
         const elements = document.querySelectorAll(selector);
+        debugInfo.foundElements.push({ selector, count: elements.length });
         elements.forEach((el) => {
           const text = el.textContent?.trim();
           // Match time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
@@ -172,17 +194,21 @@ export async function GET(request: Request) {
       }
     }
     
-    // Remove duplicates and return
-    return [...new Set(slots)];
+    // Remove duplicates
+    return {
+      slots: [...new Set(slots)],
+      debug: debugInfo
+    };
   });
+  
+  const timeSlots = extractionResult.slots || [];
   
   return {
     data: {
       timeSlots: timeSlots,
       pageTitle: await page.title(),
       url: page.url(),
-      // Note: We're extracting available time slots from the calendar
-      // The timeSlots array contains all available times found on the page
+      debug: extractionResult.debug || {} // Include debug info to see what we found
     },
     type: "application/json"
   };
@@ -252,6 +278,7 @@ export async function GET(request: Request) {
       availableTimes: timeSlots,
       checkedAt: new Date().toISOString(),
       source: "rhinebecktennis.com (Browserless.io)",
+      debug: debugInfo, // Include debug info to help troubleshoot
     });
 
   } catch (error: any) {
