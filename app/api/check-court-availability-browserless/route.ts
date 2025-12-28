@@ -98,7 +98,7 @@ export async function GET(request: Request) {
   }
   
   // Wait for calendar to appear
-  await page.waitForTimeout(2000);
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
   // Try to click on the date (day ${dayOfMonth})
   try {
