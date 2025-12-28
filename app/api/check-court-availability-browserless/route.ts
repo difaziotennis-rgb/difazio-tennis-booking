@@ -69,7 +69,7 @@ export async function GET(request: Request) {
   });
   
   // Wait for page to load
-  await page.waitForTimeout(3000);
+  await new Promise(resolve => setTimeout(resolve, 3000));
   
   // Try to find and click "Book Now" button
   try {
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
         const button = await page.$(selector);
         if (button) {
           await button.click();
-          await page.waitForTimeout(2000);
+          await new Promise(resolve => setTimeout(resolve, 2000));
           clicked = true;
           break;
         }
@@ -116,7 +116,7 @@ export async function GET(request: Request) {
         const dateButton = await page.$(selector);
         if (dateButton) {
           await dateButton.click();
-          await page.waitForTimeout(2000);
+          await new Promise(resolve => setTimeout(resolve, 2000));
           dateClicked = true;
           break;
         }
