@@ -133,7 +133,8 @@ export async function GET(request: Request) {
     
     if (clicked) {
       dateClicked = true;
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait longer for time slots to load after clicking date
+      await new Promise(resolve => setTimeout(resolve, 4000));
     }
   } catch (e) {
     // Continue even if date click fails
@@ -224,12 +225,17 @@ export async function GET(request: Request) {
         debugInfo.foundElements.push({ selector, count: elements.length });
         elements.forEach((el) => {
           const text = el.textContent?.trim();
-          // Match time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
+          // Skip calendar day numbers (days 1-31) - these are not times
+          if (text && /^\\d{1,2}$/.test(text) && parseInt(text) >= 1 && parseInt(text) <= 31) {
+            return; // Skip calendar day numbers
+          }
+          
+          // Match actual time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
+          // Must include AM/PM or colon to be a time (not just a number)
           if (text && (
             text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/i) || 
             text.match(/\\d{1,2}\\s*(AM|PM)/i) ||
-            text.match(/\\d{1,2}:00/) ||
-            text.match(/^\\d{1,2}$/) // Just a number (like "9" or "10")
+            text.match(/\\d{1,2}:00/)
           )) {
             // Only add if it looks like a time and element is clickable/enabled
             const isDisabled = el.hasAttribute('disabled') || 
