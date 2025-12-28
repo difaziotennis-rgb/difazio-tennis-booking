@@ -202,13 +202,22 @@ export async function GET(request: Request) {
   });
   
   const timeSlots = extractionResult.slots || [];
+  const debugInfo = extractionResult.debug || {};
+  
+  // Also get page info for debugging
+  const pageTitle = await page.title();
+  const pageUrl = page.url();
   
   return {
     data: {
       timeSlots: timeSlots,
-      pageTitle: await page.title(),
-      url: page.url(),
-      debug: extractionResult.debug || {} // Include debug info to see what we found
+      pageTitle: pageTitle,
+      url: pageUrl,
+      debug: {
+        ...debugInfo,
+        extractionResultKeys: Object.keys(extractionResult || {}),
+        hasDebug: !!extractionResult?.debug
+      }
     },
     type: "application/json"
   };
