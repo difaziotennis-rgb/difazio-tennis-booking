@@ -21,6 +21,7 @@ export default function LadderPage() {
   const [isSiteAdmin, setIsSiteAdmin] = useState(false)
   const [clubs, setClubs] = useState<Club[]>([])
   const [selectedClubId, setSelectedClubId] = useState<string>('')
+  const [clubsLoading, setClubsLoading] = useState(true)
 
   useEffect(() => {
     checkSiteAdminStatus()
@@ -37,12 +38,28 @@ export default function LadderPage() {
   }, [])
 
   const fetchClubs = async () => {
+    setClubsLoading(true)
     try {
       const response = await fetch('/api/clubs')
+      if (!response.ok) {
+        console.error('Failed to fetch clubs:', response.status, response.statusText)
+        setClubs([])
+        setClubsLoading(false)
+        return
+      }
       const data = await response.json()
-      setClubs(data)
+      if (Array.isArray(data)) {
+        setClubs(data)
+        console.log('Fetched clubs:', data.length, data)
+      } else {
+        console.error('Invalid clubs data:', data)
+        setClubs([])
+      }
     } catch (error) {
       console.error('Failed to fetch clubs:', error)
+      setClubs([])
+    } finally {
+      setClubsLoading(false)
     }
   }
 
@@ -165,7 +182,11 @@ export default function LadderPage() {
             <CardContent>
               <form onSubmit={handleGoToClub} className="space-y-4">
                 {/* Quick Select Dropdown */}
-                {clubs.length > 0 && (
+                {clubsLoading ? (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Loading clubs...
+                  </div>
+                ) : clubs.length > 0 ? (
                   <div className="space-y-2">
                     <Label>Quick Select (All Clubs)</Label>
                     <Select
@@ -186,6 +207,17 @@ export default function LadderPage() {
                     <p className="text-xs text-muted-foreground">
                       Or enter club name below
                     </p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                    No clubs found. {isSiteAdmin && (
+                      <button
+                        onClick={() => router.push('/admin')}
+                        className="underline hover:no-underline"
+                      >
+                        Create a club in the admin panel
+                      </button>
+                    )}
                   </div>
                 )}
 
