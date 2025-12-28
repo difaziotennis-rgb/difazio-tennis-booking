@@ -71,33 +71,33 @@ export async function GET(request: Request) {
   // Wait for page to load
   await new Promise(resolve => setTimeout(resolve, 3000));
   
-  // Try to find and click "Book Now" button
+  // Try to find and click "Book Now" button using evaluate for more reliability
+  let bookNowClicked = false;
   try {
-    const bookNowSelectors = [
-      'button:has-text("Book Now")',
-      'a:has-text("Book Now")',
-      '[data-testid*="book"]',
-      'button[class*="book"]',
-      'a[class*="book"]'
-    ];
-    
-    let clicked = false;
-    for (const selector of bookNowSelectors) {
-      try {
-        const button = await page.$(selector);
-        if (button) {
-          await button.click();
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          clicked = true;
-          break;
+    bookNowClicked = await page.evaluate(() => {
+      // Find all clickable elements
+      const elements = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+      for (const el of elements) {
+        const text = el.textContent?.trim();
+        if (text && text.toLowerCase().includes('book now')) {
+          if (el instanceof HTMLElement) {
+            el.click();
+            return true;
+          }
         }
-      } catch (e) {}
+      }
+      return false;
+    });
+    
+    if (bookNowClicked) {
+      // Wait for calendar/modal to appear
+      await new Promise(resolve => setTimeout(resolve, 4000));
     }
   } catch (e) {
     console.log('Could not find Book Now button, continuing...');
   }
   
-  // Wait for calendar to appear
+  // Wait a bit more for calendar to appear
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   // Try to click on the date (day ${dayOfMonth})
@@ -117,15 +117,12 @@ export async function GET(request: Request) {
       }
     }
     
-    // Try multiple strategies to find and click the date
+    // Try multiple strategies: first with selectors, then with evaluate
     const dateSelectors = [
-      \`button[aria-label*="${dayOfMonth}"]\`,
+      \`[aria-label*="${dayOfMonth}"]\`,
       \`[data-date="${date}"]\`,
       \`[data-date*="${dayOfMonth}"]\`,
-      \`button:has-text("${dayOfMonth}")\`,
-      \`td:has-text("${dayOfMonth}")\`,
-      \`[class*="calendar"] button:has-text("${dayOfMonth}")\`,
-      \`[class*="date"] button:has-text("${dayOfMonth}")\`
+      \`[aria-label*="January ${dayOfMonth}"], [aria-label*="Jan ${dayOfMonth}"]\`
     ];
     
     for (const selector of dateSelectors) {
@@ -133,7 +130,7 @@ export async function GET(request: Request) {
         const dateButton = await targetFrame.$(selector);
         if (dateButton) {
           await dateButton.click();
-          await new Promise(resolve => setTimeout(resolve, 3000)); // Wait longer for time slots to load
+          await new Promise(resolve => setTimeout(resolve, 3000));
           dateClicked = true;
           break;
         }
@@ -142,29 +139,35 @@ export async function GET(request: Request) {
       }
     }
     
-    // If date clicking didn't work, try using evaluate to find and click by text
+    // If selectors didn't work, use evaluate to find by text content
     if (!dateClicked) {
-      const clicked = await targetFrame.evaluate((day) => {
-        // Try to find the date button by text content
-        const buttons = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"], a[class*="date"]'));
+      const clicked = await targetFrame.evaluate((day, targetDate) => {
+        // Try to find date elements - buttons, cells, divs in calendar
+        const selectors = 'button, [role="button"], td, div[class*="date"], a[class*="date"], div[class*="day"], button[class*="day"]';
+        const elements = Array.from(document.querySelectorAll(selectors));
         const dayStr = String(day);
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim();
-          if (text === dayStr) {
-            // Use click() method directly - no TypeScript cast needed in browser context
-            if (btn instanceof HTMLElement) {
-              btn.click();
-            } else if (btn.click) {
-              btn.click();
+        
+        for (const el of elements) {
+          const text = el.textContent?.trim();
+          // Match exact day number or date string
+          if (text === dayStr || text === targetDate || (el.getAttribute('data-date') === targetDate)) {
+            if (el instanceof HTMLElement) {
+              // Check if element is not disabled
+              const isDisabled = el.hasAttribute('disabled') || 
+                                el.classList.contains('disabled') ||
+                                el.classList.contains('unavailable');
+              if (!isDisabled) {
+                el.click();
+                return true;
+              }
             }
-            return true;
           }
         }
         return false;
-      }, ${dayOfMonth});
+      }, ${dayOfMonth}, "${date}");
       
       if (clicked) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 4000)); // Wait for time slots to load
         dateClicked = true;
       }
     }
@@ -184,8 +187,7 @@ export async function GET(request: Request) {
       allButtons: [],
       allText: [],
       hasIframe: document.querySelectorAll('iframe').length > 0,
-      iframeCount: document.querySelectorAll('iframe').length,
-      dateClicked: false // Will be updated if we detect calendar
+      iframeCount: document.querySelectorAll('iframe').length
     };
     
     // First, let's see what buttons and elements are on the page
@@ -266,6 +268,7 @@ export async function GET(request: Request) {
       debug: {
         ...debugInfoFromPage,
         dateClicked: dateClicked,
+        bookNowClicked: bookNowClicked,
         extractionResultKeys: Object.keys(extractionResult || {}),
         hasDebug: !!extractionResult?.debug
       }
