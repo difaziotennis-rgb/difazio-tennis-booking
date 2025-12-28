@@ -133,8 +133,12 @@ export async function GET(request: Request) {
     
     if (clicked) {
       dateClicked = true;
-      // Wait longer for time slots to load after clicking date
-      await new Promise(resolve => setTimeout(resolve, 4000));
+      // Wait for time slots to appear - try multiple selectors
+      try {
+        await page.waitForSelector('[class*="time"], [class*="slot"], [class*="hour"], button[class*="available"]', { timeout: 5000 }).catch(() => {});
+      } catch (e) {}
+      // Also wait a bit for dynamic content to load
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   } catch (e) {
     // Continue even if date click fails
@@ -206,16 +210,21 @@ export async function GET(request: Request) {
     });
     
     // Try multiple selectors to find time slot elements
+    // Look in all possible containers for time-related elements
     const selectors = [
-      // Wix booking widget common selectors
-      'button[class*="time"]:not([disabled]):not([class*="disabled"]):not([class*="unavailable"])',
-      '[data-testid*="time"]:not([disabled]):not([class*="disabled"])',
-      '[class*="time-slot"]:not([disabled]):not([class*="unavailable"])',
-      '[class*="slot"]:not([disabled]):not([class*="unavailable"])',
+      // Time-specific selectors
+      'button[class*="time"]:not([disabled])',
+      '[class*="time-slot"]:not([disabled])',
+      '[class*="slot"]:not([disabled]):not([class*="date"])',
+      '[class*="hour"]:not([disabled])',
+      '[data-testid*="time"]:not([disabled])',
       'button[class*="available"]',
       '[role="button"][class*="time"]:not([disabled])',
-      // Generic button selectors that might contain times
-      'button:not([disabled]):not([class*="disabled"]):not([class*="unavailable"])'
+      // Look in time slot containers
+      '[class*="time-slot"] button:not([disabled])',
+      '[class*="slot"] button:not([disabled]):not([class*="date"])',
+      // Generic buttons (but we'll filter out day numbers)
+      'button:not([disabled]):not([class*="disabled"]):not([class*="unavailable"]):not([class*="Day"])'
     ];
     
     // Try each selector
