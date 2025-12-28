@@ -45,14 +45,18 @@ export async function GET() {
         "Content-Type": "application/json",
       },
       signal: controller.signal,
-      body: JSON.stringify({
-        code: `export default async ({ page }) => {
-  return JSON.stringify({
-    success: true,
-    message: "Browserless connection test successful"
-  });
-};`,
-      }),
+      headers: {
+        "Content-Type": "application/javascript",
+      },
+      body: `export default async function ({ page }) {
+  return {
+    data: {
+      success: true,
+      message: "Browserless connection test successful"
+    },
+    type: "application/json"
+  };
+}`,
     });
 
     clearTimeout(timeoutId);

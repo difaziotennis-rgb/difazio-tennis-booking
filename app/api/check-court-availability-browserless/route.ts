@@ -58,11 +58,10 @@ export async function GET(request: Request) {
       browserlessResponse = await fetch(`${BROWSERLESS_URL}/function?token=${BROWSERLESS_API_KEY}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/javascript",
         },
         signal: controller.signal,
-        body: JSON.stringify({
-          code: `export default async ({ page }) => {
+        body: `export default async function ({ page }) {
   // Navigate to booking page
   await page.goto('https://rhinebecktennis.com/book-online', {
     waitUntil: 'networkidle2',

@@ -20,11 +20,16 @@ export async function GET() {
     const response = await fetch(`${BROWSERLESS_URL}/function?token=${BROWSERLESS_API_KEY}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/javascript",
       },
-      body: JSON.stringify({
-        code: simpleCode,
-      }),
+      body: `export default async function ({ page }) {
+  return {
+    data: {
+      message: "Hello from Browserless!"
+    },
+    type: "application/json"
+  };
+}`,
     });
 
     const status = response.status;
