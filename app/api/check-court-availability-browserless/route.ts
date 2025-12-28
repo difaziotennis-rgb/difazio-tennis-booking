@@ -147,9 +147,10 @@ export async function GET(request: Request) {
       const clicked = await targetFrame.evaluate((day) => {
         // Try to find the date button by text content
         const buttons = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"], a[class*="date"]'));
+        const dayStr = String(day);
         for (const btn of buttons) {
           const text = btn.textContent?.trim();
-          if (text === String(day) || text === \`\${day}\`) {
+          if (text === dayStr) {
             // Use click() method directly - no TypeScript cast needed in browser context
             if (btn instanceof HTMLElement) {
               btn.click();
