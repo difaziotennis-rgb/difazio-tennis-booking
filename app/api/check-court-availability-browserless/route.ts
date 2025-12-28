@@ -50,12 +50,18 @@ export async function GET(request: Request) {
 
     // Use Browserless.io to automate the browser
     // Browserless.io uses /function endpoint for custom Puppeteer code
-    const browserlessResponse = await fetch(`${BROWSERLESS_URL}/function?token=${BROWSERLESS_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for Browserless
+    
+    let browserlessResponse;
+    try {
+      browserlessResponse = await fetch(`${BROWSERLESS_URL}/function?token=${BROWSERLESS_API_KEY}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
         code: `
           // Navigate to booking page
           await page.goto('https://rhinebecktennis.com/book-online', {
@@ -154,15 +160,47 @@ export async function GET(request: Request) {
         `,
       }),
     });
+      clearTimeout(timeoutId);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        return NextResponse.json({
+          available: true,
+          error: "Browserless request timed out",
+          date,
+          hour: parseInt(hour),
+        });
+      }
+      throw fetchError;
+    }
 
     if (!browserlessResponse.ok) {
       const errorText = await browserlessResponse.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = errorText;
+      }
       console.error("Browserless error:", errorText);
+      
+      // Try to extract useful error information
+      let errorMessage = `Browserless request failed: ${browserlessResponse.status}`;
+      if (typeof errorDetails === 'object' && errorDetails.message) {
+        errorMessage = errorDetails.message;
+      } else if (typeof errorDetails === 'string') {
+        errorMessage = errorDetails;
+      }
+      
       return NextResponse.json({
         available: true, // Fail open
-        error: `Browserless request failed: ${browserlessResponse.status}`,
+        error: errorMessage,
+        errorCode: browserlessResponse.status,
+        errorDetails: errorDetails,
         date,
         hour: parseInt(hour),
+        browserlessUrl: BROWSERLESS_URL,
+        timestamp: new Date().toISOString(),
       });
     }
 

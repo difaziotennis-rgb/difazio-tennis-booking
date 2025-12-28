@@ -81,14 +81,28 @@ export async function GET(request: Request) {
     const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
     if (BROWSERLESS_API_KEY) {
       try {
-        const browserlessUrl = new URL(request.url);
-        browserlessUrl.pathname = "/api/check-court-availability-browserless";
-        const browserlessResponse = await fetch(browserlessUrl.toString());
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.url.split('/api')[0];
+        const browserlessUrl = `${baseUrl}/api/check-court-availability-browserless?date=${date}&hour=${hour}`;
+        
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        const browserlessResponse = await fetch(browserlessUrl, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        
         if (browserlessResponse.ok) {
           return browserlessResponse;
         }
-      } catch (error) {
-        console.error("Browserless check failed, falling back:", error);
+        
+        // If browserless failed, we'll fall through to the fallback
+        const errorData = await browserlessResponse.json().catch(() => ({}));
+        console.error("Browserless check failed:", browserlessResponse.status, errorData);
+      } catch (error: any) {
+        console.error("Browserless check failed, falling back:", error.message);
+        // Continue to fallback
       }
     }
     
