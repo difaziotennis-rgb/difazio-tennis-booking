@@ -126,36 +126,63 @@ export async function GET(request: Request) {
     console.log('Could not click date, continuing...');
   }
   
-  // Extract available time slots
+  // Extract available time slots from the calendar
+  // We need to find elements that represent available times (not unavailable/booked ones)
   const timeSlots = await page.evaluate(() => {
     const slots = [];
+    
+    // Try multiple selectors to find time slot elements
     const selectors = [
-      'button[class*="time"]',
-      '[data-testid*="time"]',
-      '[class*="time-slot"]',
-      '[class*="slot"]',
+      // Wix booking widget common selectors
+      'button[class*="time"]:not([disabled]):not([class*="disabled"]):not([class*="unavailable"])',
+      '[data-testid*="time"]:not([disabled]):not([class*="disabled"])',
+      '[class*="time-slot"]:not([disabled]):not([class*="unavailable"])',
+      '[class*="slot"]:not([disabled]):not([class*="unavailable"])',
       'button[class*="available"]',
-      '[role="button"][class*="time"]'
+      '[role="button"][class*="time"]:not([disabled])',
+      // Generic button selectors that might contain times
+      'button:not([disabled]):not([class*="disabled"]):not([class*="unavailable"])'
     ];
     
+    // Try each selector
     for (const selector of selectors) {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach((el) => {
-        const text = el.textContent?.trim();
-        if (text && (text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/) || text.match(/\\d{1,2}:00/))) {
-          slots.push(text);
-        }
-      });
+      try {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach((el) => {
+          const text = el.textContent?.trim();
+          // Match time patterns: "9:00 AM", "9 AM", "09:00", "2:00 PM", etc.
+          if (text && (
+            text.match(/\\d{1,2}:\\d{2}\\s*(AM|PM)/i) || 
+            text.match(/\\d{1,2}\\s*(AM|PM)/i) ||
+            text.match(/\\d{1,2}:00/) ||
+            text.match(/^\\d{1,2}$/) // Just a number (like "9" or "10")
+          )) {
+            // Only add if it looks like a time and element is clickable/enabled
+            const isDisabled = el.hasAttribute('disabled') || 
+                              el.classList.contains('disabled') ||
+                              el.classList.contains('unavailable') ||
+                              el.classList.contains('booked');
+            if (!isDisabled) {
+              slots.push(text);
+            }
+          }
+        });
+      } catch (e) {
+        // Continue if selector fails
+      }
     }
     
-    return [...new Set(slots)]; // Remove duplicates
+    // Remove duplicates and return
+    return [...new Set(slots)];
   });
   
   return {
     data: {
       timeSlots: timeSlots,
       pageTitle: await page.title(),
-      url: page.url()
+      url: page.url(),
+      // Note: We're extracting available time slots from the calendar
+      // The timeSlots array contains all available times found on the page
     },
     type: "application/json"
   };
