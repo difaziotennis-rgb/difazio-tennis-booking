@@ -133,32 +133,8 @@ export async function GET(request: Request) {
     
     if (clicked) {
       dateClicked = true;
-      // Wait a bit for date selection to register
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // After selecting date, try clicking "Next" button to proceed to time selection
-      try {
-        const nextClicked = await page.evaluate(() => {
-          const buttons = Array.from(document.querySelectorAll('button'));
-          for (const btn of buttons) {
-            const text = btn.textContent?.trim();
-            if (text && (text.toLowerCase() === 'next' || text.toLowerCase().includes('next'))) {
-              if (btn instanceof HTMLElement && !btn.hasAttribute('disabled')) {
-                btn.click();
-                return true;
-              }
-            }
-          }
-          return false;
-        });
-        
-        if (nextClicked) {
-          // Wait for time slots to appear after clicking Next
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-      } catch (e) {
-        // Continue even if Next click fails
-      }
+      // Wait for time slots to appear on the right side of calendar (they appear immediately after date selection)
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   } catch (e) {
     // Continue even if date click fails
