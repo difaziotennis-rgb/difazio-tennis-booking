@@ -104,15 +104,16 @@ export async function GET(request: Request) {
   // We need to find and click the date in the calendar to see time slots
   let dateClicked = false;
   try {
-    // First, try to find the calendar widget - Wix bookings often use iframes
-    const calendarFrame = await page.$('iframe[src*="calendar"], iframe[src*="booking"], iframe[src*="wix"]');
-    let calendarPage = page;
+    // First, check if there's an iframe for the calendar widget
+    const frames = page.frames();
+    let targetFrame = page.mainFrame();
     
-    if (calendarFrame) {
-      // If there's an iframe, get its content
-      const frame = await calendarFrame.contentFrame();
-      if (frame) {
-        calendarPage = frame as any;
+    // Look for calendar/booking iframes
+    for (const frame of frames) {
+      const frameUrl = frame.url();
+      if (frameUrl.includes('calendar') || frameUrl.includes('booking') || frameUrl.includes('wix')) {
+        targetFrame = frame;
+        break;
       }
     }
     
@@ -124,13 +125,12 @@ export async function GET(request: Request) {
       \`button:has-text("${dayOfMonth}")\`,
       \`td:has-text("${dayOfMonth}")\`,
       \`[class*="calendar"] button:has-text("${dayOfMonth}")\`,
-      \`[class*="date"] button:has-text("${dayOfMonth}")\`,
-      \`button[aria-label*="January ${dayOfMonth}"], button[aria-label*="Jan ${dayOfMonth}"]\`
+      \`[class*="date"] button:has-text("${dayOfMonth}")\`
     ];
     
     for (const selector of dateSelectors) {
       try {
-        const dateButton = await calendarPage.$(selector);
+        const dateButton = await targetFrame.$(selector);
         if (dateButton) {
           await dateButton.click();
           await new Promise(resolve => setTimeout(resolve, 3000)); // Wait longer for time slots to load
@@ -142,11 +142,11 @@ export async function GET(request: Request) {
       }
     }
     
-    // If date clicking didn't work, try using page.evaluate to find and click
+    // If date clicking didn't work, try using evaluate to find and click by text
     if (!dateClicked) {
-      const clicked = await calendarPage.evaluate((day) => {
+      const clicked = await targetFrame.evaluate((day) => {
         // Try to find the date button by text content
-        const buttons = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"]'));
+        const buttons = Array.from(document.querySelectorAll('button, [role="button"], td, div[class*="date"], a[class*="date"]'));
         for (const btn of buttons) {
           const text = btn.textContent?.trim();
           if (text === String(day) || text === \`\${day}\`) {
